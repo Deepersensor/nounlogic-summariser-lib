@@ -25,6 +25,7 @@ import logging
 import sys
 
 from nounlogic_summariser_lib import __version__
+from nounlogic_summariser_lib.summariser import process_file, load_config
 
 __author__ = "nathfavour"
 __copyright__ = "nathfavour"
@@ -72,38 +73,25 @@ def parse_args(args):
     Returns:
       :obj:`argparse.Namespace`: command line parameters namespace
     """
-    parser = argparse.ArgumentParser(description="Just a Fibonacci demonstration")
-    parser.add_argument(
-        "--version",
-        action="version",
-        version=f"nounlogic-summariser-lib {__version__}",
-    )
-    parser.add_argument(dest="n", help="n-th Fibonacci number", type=int, metavar="INT")
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        dest="loglevel",
-        help="set loglevel to INFO",
-        action="store_const",
-        const=logging.INFO,
-    )
-    parser.add_argument(
-        "-vv",
-        "--very-verbose",
-        dest="loglevel",
-        help="set loglevel to DEBUG",
-        action="store_const",
-        const=logging.DEBUG,
-    )
+    parser = argparse.ArgumentParser(description="Text Summarization Tool")
+    subparsers = parser.add_subparsers(dest='command')
+
+    # Summarize command
+    summarize_parser = subparsers.add_parser('summarize', help='Summarize a text file')
+    summarize_parser.add_argument('file', help='Path to the input file')
+    summarize_parser.add_argument('--config', help='Path to config file', default='config.json')
+    summarize_parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose output')
+
     return parser.parse_args(args)
 
 
-def setup_logging(loglevel):
+def setup_logging(verbose):
     """Setup basic logging
 
     Args:
-      loglevel (int): minimum loglevel for emitting messages
+      verbose (bool): If True, set loglevel to DEBUG
     """
+    loglevel = logging.DEBUG if verbose else logging.INFO
     logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
     logging.basicConfig(
         level=loglevel, stream=sys.stdout, format=logformat, datefmt="%Y-%m-%d %H:%M:%S"
@@ -111,20 +99,19 @@ def setup_logging(loglevel):
 
 
 def main(args):
-    """Wrapper allowing :func:`fib` to be called with string arguments in a CLI fashion
-
-    Instead of returning the value from :func:`fib`, it prints the result to the
-    ``stdout`` in a nicely formatted message.
+    """Wrapper for CLI commands
 
     Args:
       args (List[str]): command line parameters as list of strings
-          (for example  ``["--verbose", "42"]``).
     """
     args = parse_args(args)
-    setup_logging(args.loglevel)
-    _logger.debug("Starting crazy calculations...")
-    print(f"The {args.n}-th Fibonacci number is {fib(args.n)}")
-    _logger.info("Script ends here")
+    setup_logging(args.verbose)
+
+    if args.command == 'summarize':
+        _logger.info(f"Processing file: {args.file}")
+        config = load_config(args.config)
+        process_file(args.file, config)
+        _logger.info("Summarization completed.")
 
 
 def run():
