@@ -1,2 +1,4 @@
 ollama
 markitdown
+pdfplumber
+markdownify
