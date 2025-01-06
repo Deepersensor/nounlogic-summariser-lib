@@ -1,6 +1,6 @@
 import json
 import os
-from .interface.py import sanitize_text, chunk_text
+from .interface import sanitize_text, chunk_text
 from .convert import convert_pdf_to_md
 import ollama
 
