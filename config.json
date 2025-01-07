@@ -1,0 +1,46 @@
+{
+    "token_limit": 1000,
+    "prompt_template": "Generate a summary of the following text:",
+    "ollama": {
+        "model": "tinyllama",
+        "host": "localhost",
+        "port": 11434,
+        "timeout": 30,
+        "retry_attempts": 3
+    },
+    "output": {
+        "suffix": "_summarised.txt",
+        "directory": "summarized_outputs"
+    },
+    "supported_formats": [".txt", ".md", ".pdf"],
+    "conversion": {
+        "pdf_to_md": true,
+        "supported_conversions": {
+            ".pdf": ".md",
+            ".xlsx": ".md",
+            ".docx": ".md"
+        }
+    },
+    "chunking": {
+        "token_limit": 1000,
+        "overlap": 100
+    },
+    "logging": {
+        "level": "INFO",
+        "format": "[%(asctime)s] %(levelname)s:%(name)s:%(message)s",
+        "date_format": "%Y-%m-%d %H:%M:%S",
+        "file": "summarizer.log"
+    },
+    "output_formats": {
+        "enable_pdf_conversion": true,
+        "additional_formats": [".pdf"]
+    },
+    "prompt_settings": {
+        "enable_custom_prompt": true,
+        "custom_prompt": "Please respond with only a concise one short sentence summary of the text below, and nothing else:"
+    },
+    "error_handling": {
+        "continue_on_error": true,
+        "error_log": "errors.log"
+    }
+}
