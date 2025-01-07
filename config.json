@@ -37,7 +37,7 @@
     },
     "prompt_settings": {
         "enable_custom_prompt": true,
-        "custom_prompt": "Please respond with only a concise one short sentence summary of the text below, and nothing else:"
+        "custom_prompt": "Please respond with only one sentence concise summary of the text below, and nothing else:"
     },
     "error_handling": {
         "continue_on_error": true,
