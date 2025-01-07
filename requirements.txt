@@ -1,4 +1,4 @@
-ollama
+ollama>=1.0.0
 markitdown
 pdfplumber
 markdownify
