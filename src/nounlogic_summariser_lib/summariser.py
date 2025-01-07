@@ -2,7 +2,7 @@ import json
 import os
 from .interface import sanitize_text, chunk_text
 from .convert import convert_pdf_to_md
-from ollama import Client
+from ollama import chat
 
 def load_config(config_path='config.json'):
     """Load configuration from a JSON file.
@@ -31,18 +31,16 @@ def summarize_text(text, config):
     prompt = config['prompt_template']
     ollama_config = config['ollama']
 
-    client = Client(host=ollama_config['host'], port=ollama_config['port'])
-    
     chunks = chunk_text(text, tokens)
     summaries = []
 
     for chunk in chunks:
-        response = client.summarize(
+        response = chat(
             model=ollama_config['model'],
-            prompt=f"{prompt}\n\n{chunk}",
-            timeout=ollama_config.get('timeout', 30)
+            messages=[{"role": "user", "content": f"{prompt}\n\n{chunk}"}]
         )
-        summaries.append(response['summary'])
+        # Access the content of the response
+        summaries.append(response.message.content)
 
     return '\n'.join(summaries)
 

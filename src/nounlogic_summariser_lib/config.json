@@ -3,8 +3,6 @@
     "prompt_template": "Generate a summary of the following text:",
     "ollama": {
         "model": "tinyllama",
-        "host": "localhost",
-        "port": 11434,
         "timeout": 30,
         "retry_attempts": 3
     },
