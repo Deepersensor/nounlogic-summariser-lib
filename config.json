@@ -3,8 +3,6 @@
     "prompt_template": "Generate a summary of the following text:",
     "ollama": {
         "model": "tinyllama",
-        "host": "localhost",
-        "port": 11434,
         "timeout": 30,
         "retry_attempts": 3
     },
@@ -37,7 +35,7 @@
     },
     "prompt_settings": {
         "enable_custom_prompt": true,
-        "custom_prompt": "Please respond with only one sentence concise summary of the text below, and nothing else:"
+        "custom_prompt": "Please provide only one sentence concise summary of the text below:"
     },
     "error_handling": {
         "continue_on_error": true,

@@ -60,19 +60,6 @@ def process_file(file_path, config):
 
     sanitized = sanitize_text(text)
     summary = summarize_text(sanitized, config)
-    output_path = f"{os.path.splitext(file_path)[0]}{config['output_suffix']}"
-    with open(output_path, 'w', encoding='utf-8') as f:
-        f.write(summary)
-    _, ext = os.path.splitext(file_path)
-
-    if ext.lower() == '.pdf' and config['conversion']['pdf_to_md']:
-        text = convert_pdf_to_md(file_path)
-    else:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            text = f.read()
-
-    sanitized = sanitize_text(text)
-    summary = summarize_text(sanitized, config)
-    output_path = f"{os.path.splitext(file_path)[0]}{config['output_suffix']}"
+    output_path = f"{os.path.splitext(file_path)[0]}{config['output']['suffix']}"
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(summary)
