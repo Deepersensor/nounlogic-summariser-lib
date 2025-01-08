@@ -136,8 +136,11 @@ def preprocess_text(text: str, config: Dict, filename: str) -> Tuple[str, str]:
     combined_text = ' '.join(processed_text)
     selected_length = int(len(combined_text.split()) * 0.6)
     selected_text = ' '.join(combined_text.split()[:selected_length])
-    
-    return selected_text, summary_file
+
+    # Final processing layer
+    final_text = final_process_text(selected_text, config, filename)
+
+    return final_text, summary_file
 
 def discard_close_sentences(text: str, common_words_threshold: int) -> str:
     """
@@ -162,3 +165,61 @@ def discard_close_sentences(text: str, common_words_threshold: int) -> str:
         else:
             previous_sentence = sentence  # Update without adding
     return ' '.join(filtered_sentences)
+
+def final_process_text(text: str, config: Dict, filename: str) -> str:
+    """
+    Further process the text by filtering out 20 sentences for every 50 based on specific criteria.
+
+    Args:
+        text (str): Text after initial preprocessing.
+        config (Dict): Configuration settings.
+        filename (str): Name of the file being processed.
+
+    Returns:
+        str: Further processed text.
+    """
+    sentences = re.split(r'(?<=[.!?]) +', text)
+    processed_sentences = []
+    total_sentences = len(sentences)
+    batch_size = 50
+    removal_count = 20
+    proximity_threshold = config['preprocessing']['final_proximity_threshold']
+
+    for i in range(0, total_sentences, batch_size):
+        batch = sentences[i:i + batch_size]
+        if len(batch) < batch_size:
+            processed_sentences.extend(batch)
+            continue
+
+        # Calculate scores based on average word length
+        sentence_scores = [
+            (index, sum(len(word) for word in sentence.split()) / len(sentence.split()))
+            for index, sentence in enumerate(batch)
+        ]
+
+        # Sort sentences by score (ascending)
+        sorted_sentences = sorted(sentence_scores, key=lambda x: x[1])
+
+        # Select sentences to remove
+        sentences_to_remove = set()
+        for idx, score in sorted_sentences[:removal_count]:
+            # Check proximity
+            if any(abs(idx - removed_idx) <= proximity_threshold for removed_idx in sentences_to_remove):
+                continue
+            sentences_to_remove.add(idx)
+
+        # Add sentences not removed to the processed list
+        for idx, sentence in enumerate(batch):
+            if idx not in sentences_to_remove:
+                processed_sentences.append(sentence)
+
+    # Maintain original order
+    final_text = ' '.join(processed_sentences)
+
+    # Save preprocessed summary if enabled
+    if config.get('save_preprocessed', False):
+        preprocessed_file = f"{os.path.splitext(filename)[0]}-summary-preprocessed.txt"
+        with open(preprocessed_file, 'w', encoding='utf-8') as pf:
+            pf.write(final_text)
+
+    return final_text

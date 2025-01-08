@@ -48,6 +48,7 @@
         "number_proximity": 2,
         "common_words_threshold": 5,
         "capital_proximity": 2,
-        "toc_max_words": 500
+        "toc_max_words": 500,
+        "save_preprocessed": true
     }
 }
