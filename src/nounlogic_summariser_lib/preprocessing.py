@@ -308,7 +308,3 @@ def final_process_text(chunks: List[str], config: Dict, filename: str, stats: Di
             pf.flush()  # Ensure immediate writing
     
     return final_text
-
-            pf.write(final_text)
-    
-    return final_text
