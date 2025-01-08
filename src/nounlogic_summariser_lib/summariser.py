@@ -3,6 +3,7 @@ import os
 from .interface import sanitize_text, chunk_text
 from .convert import convert_pdf_to_md
 from ollama import chat
+from .preprocessing import preprocess_text
 
 def load_config(config_path='config.json'):
     """Load configuration from a JSON file.
@@ -59,7 +60,11 @@ def process_file(file_path, config):
             text = f.read()
 
     sanitized = sanitize_text(text)
-    summary = summarize_text(sanitized, config)
+    
+    # Preprocess the text
+    selected_text, summary_file = preprocess_text(sanitized, config, os.path.basename(file_path))
+    
+    summary = summarize_text(selected_text, config)
     output_path = f"{os.path.splitext(file_path)[0]}{config['output']['suffix']}"
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(summary)

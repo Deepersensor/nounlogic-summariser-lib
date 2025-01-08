@@ -35,10 +35,19 @@
     },
     "prompt_settings": {
         "enable_custom_prompt": true,
-        "custom_prompt": "Please provide a concise summary of the text below:"
+        "custom_prompt": "Please provide only one sentence concise summary of the text below:"
     },
     "error_handling": {
         "continue_on_error": true,
         "error_log": "errors.log"
+    },
+    "preprocessing": {
+        "tutor_marked_proximity": 3,
+        "tutor_marked_max_words": 100,
+        "summary_max_words": 100,
+        "number_proximity": 2,
+        "common_words_threshold": 5,
+        "capital_proximity": 2,
+        "toc_max_words": 500
     }
 }
