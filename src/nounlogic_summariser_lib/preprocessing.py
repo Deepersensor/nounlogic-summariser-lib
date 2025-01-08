@@ -246,15 +246,20 @@ def discard_close_sentences(text: str, common_words_threshold: int) -> str:
             filtered_sentences.append(sentence)
             continue
             
-        prev_vector = sentence_vectors[filtered_sentences[-1]]
-        curr_vector = sentence_vectors[sentence]
+        prev_vector = sentence_vectors.get(filtered_sentences[-1], Counter())
+        curr_vector = sentence_vectors.get(sentence, Counter())
         
-        # Calculate similarity
-        common_words = set(prev_vector.keys()) & set(curr_vector.keys())
-        similarity = len(common_words) / (math.sqrt(len(prev_vector)) * math.sqrt(len(curr_vector)))
+        # Check for empty vectors to prevent division by zero
+        if len(prev_vector) == 0 or len(curr_vector) == 0:
+            similarity = 0
+        else:
+            common_words = set(prev_vector.keys()) & set(curr_vector.keys())
+            similarity = len(common_words) / (math.sqrt(len(prev_vector)) * math.sqrt(len(curr_vector)))
         
         if similarity < common_words_threshold / 10:  # Normalize threshold
             filtered_sentences.append(sentence)
+        # Optionally, else:
+            # _logger.debug(f"Discarded sentence due to high similarity: {sentence}")
     
     return ' '.join(filtered_sentences)
 
