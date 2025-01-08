@@ -1,6 +1,82 @@
 import re
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Set
 import os
+import string
+from collections import Counter
+import math
+
+def calculate_sentence_importance(sentence: str, total_sentences: List[str]) -> float:
+    """Calculate sentence importance based on multiple factors."""
+    # Term frequency scoring
+    words = sentence.lower().split()
+    all_words = [w for s in total_sentences for w in s.lower().split()]
+    word_freq = Counter(all_words)
+    
+    # Calculate TF-IDF like score
+    score = sum(math.log(1 + word_freq[word]) for word in words)
+    
+    # Bonus for key phrases
+    key_phrases = ['important', 'significant', 'key', 'main', 'crucial', 'essential']
+    synonyms_map = {
+        'important': ['vital', 'pivotal', 'paramount'],
+        'significant': ['noteworthy', 'meaningful'],
+        'main': ['primary', 'principal'],
+        # ...existing synonyms...
+    }
+    # Check for synonyms
+    for phrase, synonyms in synonyms_map.items():
+        for word in synonyms:
+            if word in words:
+                score += 2  # Same bonus as direct key phrase
+    
+    # Length normalization
+    score = score / (len(words) + 1)  # Avoid division by zero
+    
+    # Position bonus (sentences at start/end of sections often more important)
+    if len(total_sentences) > 0:
+        position = total_sentences.index(sentence)
+        if position < len(total_sentences) * 0.2 or position > len(total_sentences) * 0.8:
+            score *= 1.2
+    
+    return score
+
+def get_text_statistics(text: str) -> Dict:
+    """Get statistical information about the text."""
+    sentences = re.split(r'(?<=[.!?]) +', text)
+    words = text.lower().split()
+    
+    return {
+        'sentence_count': len(sentences),
+        'word_count': len(words),
+        'avg_sentence_length': len(words) / len(sentences) if sentences else 0,
+        'unique_words': len(set(words)),
+        'lexical_density': len(set(words)) / len(words) if words else 0
+    }
+
+def smart_chunk_detection(text: str) -> List[str]:
+    """Intelligently detect text chunks based on content similarity."""
+    sentences = re.split(r'(?<=[.!?]) +', text)
+    chunks = []
+    current_chunk = []
+    current_topic_words = set()
+    
+    for sentence in sentences:
+        words = set(sentence.lower().split())
+        
+        # If there's significant topic shift, start new chunk
+        if len(current_topic_words) > 0 and len(words & current_topic_words) / len(words) < 0.3:
+            chunks.append(' '.join(current_chunk))
+            current_chunk = []
+            current_topic_words = words
+        else:
+            current_topic_words |= words
+        
+        current_chunk.append(sentence)
+    
+    if current_chunk:
+        chunks.append(' '.join(current_chunk))
+    
+    return chunks
 
 def preprocess_text(text: str, config: Dict, filename: str) -> Tuple[str, str]:
     """
@@ -137,89 +213,96 @@ def preprocess_text(text: str, config: Dict, filename: str) -> Tuple[str, str]:
     selected_length = int(len(combined_text.split()) * 0.6)
     selected_text = ' '.join(combined_text.split()[:selected_length])
 
-    # Final processing layer
-    final_text = final_process_text(selected_text, config, filename)
+    # Get text statistics for smart processing
+    stats = get_text_statistics(text)
+    
+    # Adjust thresholds based on text statistics
+    if stats['lexical_density'] > 0.7:  # High unique word ratio indicates complex text
+        config['preprocessing']['summary_max_words'] = int(config['preprocessing']['summary_max_words'] * 1.2)
+    
+    # Add intelligent chunk detection
+    processed_chunks = smart_chunk_detection(selected_text)
+    
+    # Enhanced final processing
+    final_text = final_process_text(processed_chunks, config, filename, stats)
 
     return final_text, summary_file
 
 def discard_close_sentences(text: str, common_words_threshold: int) -> str:
-    """
-    Discard sentences that are in close proximity based on common words.
-
-    Args:
-        text (str): The text to process.
-        common_words_threshold (int): Number of common words to consider proximity.
-
-    Returns:
-        str: The text after discarding close sentences.
-    """
+    """Enhanced sentence proximity detection."""
     sentences = re.split(r'(?<=[.!?]) +', text)
     filtered_sentences = []
-    previous_sentence = ""
+    sentence_vectors = {}
     
+    # Create simple vector representation for each sentence
     for sentence in sentences:
-        common_words = set(previous_sentence.lower().split()) & set(sentence.lower().split())
-        if len(common_words) < common_words_threshold:
+        words = sentence.lower().split()
+        vector = Counter(words)
+        sentence_vectors[sentence] = vector
+    
+    # Compare sentences using cosine similarity
+    for i, sentence in enumerate(sentences):
+        if i == 0:
             filtered_sentences.append(sentence)
-            previous_sentence = sentence
-        else:
-            previous_sentence = sentence  # Update without adding
+            continue
+            
+        prev_vector = sentence_vectors[filtered_sentences[-1]]
+        curr_vector = sentence_vectors[sentence]
+        
+        # Calculate similarity
+        common_words = set(prev_vector.keys()) & set(curr_vector.keys())
+        similarity = len(common_words) / (math.sqrt(len(prev_vector)) * math.sqrt(len(curr_vector)))
+        
+        if similarity < common_words_threshold / 10:  # Normalize threshold
+            filtered_sentences.append(sentence)
+    
     return ' '.join(filtered_sentences)
 
-def final_process_text(text: str, config: Dict, filename: str) -> str:
-    """
-    Further process the text by filtering out 20 sentences for every 50 based on specific criteria.
-
-    Args:
-        text (str): Text after initial preprocessing.
-        config (Dict): Configuration settings.
-        filename (str): Name of the file being processed.
-
-    Returns:
-        str: Further processed text.
-    """
-    sentences = re.split(r'(?<=[.!?]) +', text)
+def final_process_text(chunks: List[str], config: Dict, filename: str, stats: Dict) -> str:
+    """Enhanced final processing with improved intelligence."""
+    all_sentences = []
+    for chunk in chunks:
+        sentences = re.split(r'(?<=[.!?]) +', chunk)
+        all_sentences.extend(sentences)
+    
+    # Calculate importance scores for all sentences
+    sentence_scores = [
+        (i, calculate_sentence_importance(s, all_sentences))
+        for i, s in enumerate(all_sentences)
+    ]
+    
+    # Dynamic batch size based on text statistics
+    avg_batch_size = min(50, max(10, int(stats['sentence_count'] / 10)))
+    
     processed_sentences = []
-    total_sentences = len(sentences)
-    batch_size = 50
-    removal_count = 20
-    proximity_threshold = config['preprocessing']['final_proximity_threshold']
-
-    for i in range(0, total_sentences, batch_size):
-        batch = sentences[i:i + batch_size]
-        if len(batch) < batch_size:
-            processed_sentences.extend(batch)
-            continue
-
-        # Calculate scores based on average word length
-        sentence_scores = [
-            (index, sum(len(word) for word in sentence.split()) / len(sentence.split()))
-            for index, sentence in enumerate(batch)
-        ]
-
-        # Sort sentences by score (ascending)
-        sorted_sentences = sorted(sentence_scores, key=lambda x: x[1])
-
-        # Select sentences to remove
-        sentences_to_remove = set()
-        for idx, score in sorted_sentences[:removal_count]:
-            # Check proximity
-            if any(abs(idx - removed_idx) <= proximity_threshold for removed_idx in sentences_to_remove):
-                continue
-            sentences_to_remove.add(idx)
-
-        # Add sentences not removed to the processed list
-        for idx, sentence in enumerate(batch):
-            if idx not in sentences_to_remove:
-                processed_sentences.append(sentence)
-
-    # Maintain original order
+    batch_start = 0
+    
+    while batch_start < len(all_sentences):
+        batch_end = min(batch_start + avg_batch_size, len(all_sentences))
+        batch = all_sentences[batch_start:batch_end]
+        batch_scores = sentence_scores[batch_start:batch_end]
+        
+        # Calculate how many sentences to keep (60%)
+        keep_count = max(1, int(len(batch) * 0.6))
+        
+        # Sort by importance score
+        sorted_batch = sorted(batch_scores, key=lambda x: x[1], reverse=True)
+        
+        # Keep the most important sentences while maintaining order
+        keep_indices = sorted([x[0] for x in sorted_batch[:keep_count]])
+        
+        for i in range(batch_start, batch_end):
+            if i in keep_indices:
+                processed_sentences.append(all_sentences[i])
+        
+        batch_start = batch_end
+    
     final_text = ' '.join(processed_sentences)
-
+    
     # Save preprocessed summary if enabled
     if config.get('save_preprocessed', False):
         preprocessed_file = f"{os.path.splitext(filename)[0]}-summary-preprocessed.txt"
         with open(preprocessed_file, 'w', encoding='utf-8') as pf:
             pf.write(final_text)
-
+    
     return final_text

@@ -49,6 +49,22 @@
         "common_words_threshold": 5,
         "capital_proximity": 2,
         "toc_max_words": 500,
-        "save_preprocessed": true
+        "save_preprocessed": true,
+        "smart_chunking": {
+            "topic_shift_threshold": 0.3,
+            "min_chunk_size": 3,
+            "max_chunk_size": 20
+        },
+        "importance_weights": {
+            "key_phrases": 2.0,
+            "position": 1.2,
+            "length": 0.8
+        },
+        "batch_processing": {
+            "min_batch_size": 10,
+            "max_batch_size": 50,
+            "adaptive_sizing": true
+        },
+        "enable_synonym_intelligence": true
     }
 }

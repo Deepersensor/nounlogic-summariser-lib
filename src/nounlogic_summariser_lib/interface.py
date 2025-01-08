@@ -28,6 +28,11 @@ def chunk_text(text, token_limit):
     current_tokens = 0
 
     for word in words:
+        # Break earlier on question mark or heading
+        if '?' in word or word.strip().endswith(':'):
+            chunks.append(' '.join(current_chunk))
+            current_chunk = []
+            current_tokens = 0
         current_tokens += len(word.split())
         if current_tokens > token_limit:
             chunks.append(' '.join(current_chunk))
