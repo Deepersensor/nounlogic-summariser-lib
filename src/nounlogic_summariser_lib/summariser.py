@@ -64,7 +64,7 @@ def process_file(file_path, config):
     sanitized = sanitize_text(text)
     
     # Preprocess the text
-    selected_text, summary_file = preprocess_text(sanitized, config, os.path.basename(file_path))
+    selected_text, summary_file = preprocess_text(sanitized, config, os.path.basename(file_path), input_dir)
     
     summary = summarize_text(selected_text, config)
     output_path = os.path.join(input_dir, f"{os.path.splitext(os.path.basename(file_path))[0]}{config['output']['suffix']}")

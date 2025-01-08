@@ -78,7 +78,7 @@ def smart_chunk_detection(text: str) -> List[str]:
     
     return chunks
 
-def preprocess_text(text: str, config: Dict, filename: str) -> Tuple[str, str]:
+def preprocess_text(text: str, config: Dict, filename: str, input_dir: str) -> Tuple[str, str]:
     """
     Preprocess the text to filter out non-summarisable content and handle specific sections.
 
@@ -86,6 +86,7 @@ def preprocess_text(text: str, config: Dict, filename: str) -> Tuple[str, str]:
         text (str): Sanitized original text.
         config (Dict): Configuration settings.
         filename (str): Name of the file being processed.
+        input_dir (str): Directory of the input file.
 
     Returns:
         Tuple[str, str]: Tuple containing the processed text and appended summary content.
@@ -94,7 +95,6 @@ def preprocess_text(text: str, config: Dict, filename: str) -> Tuple[str, str]:
     summary_content = []
     questions_content = []
     output_suffix = config['output']['suffix']
-    input_dir = config.get('input_directory', '.')  # Add input_directory to config or pass it as a parameter
 
     # 1. Break text into sections based on common academic headings
     sections = re.split(r'\n\s*\n', text)
