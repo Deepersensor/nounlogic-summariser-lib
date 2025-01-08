@@ -78,7 +78,7 @@ def smart_chunk_detection(text: str) -> List[str]:
     
     return chunks
 
-def preprocess_text(text: str, config: Dict, filename: str, input_dir: str) -> Tuple[str, str]:
+def preprocess_text(text: str, config: Dict, filename: str, input_dir: str) -> Tuple[str, List[str]]:
     """
     Preprocess the text to filter out non-summarisable content and handle specific sections.
 
@@ -89,7 +89,7 @@ def preprocess_text(text: str, config: Dict, filename: str, input_dir: str) -> T
         input_dir (str): Directory of the input file.
 
     Returns:
-        Tuple[str, str]: Tuple containing the processed text and appended summary content.
+        Tuple[str, List[str]]: Tuple containing the processed text and appended summary content.
     """
     processed_text = []
     summary_content = []
@@ -204,11 +204,6 @@ def preprocess_text(text: str, config: Dict, filename: str, input_dir: str) -> T
     with open(questions_file, 'w', encoding='utf-8') as qf:
         qf.write('\n'.join(questions_content))
     
-    # Append summary content to {filename}-summary file
-    summary_file = os.path.join(input_dir, f"{os.path.splitext(filename)[0]}-summary.txt")
-    with open(summary_file, 'a', encoding='utf-8') as sf:
-        sf.write('\n'.join(summary_content) + '\n')
-    
     # Combine processed text ensuring only 60% is selected
     combined_text = ' '.join(processed_text)
     selected_length = int(len(combined_text.split()) * 0.6)
@@ -227,7 +222,7 @@ def preprocess_text(text: str, config: Dict, filename: str, input_dir: str) -> T
     # Enhanced final processing
     final_text = final_process_text(processed_chunks, config, filename, stats)
 
-    return final_text, summary_file
+    return final_text, summary_content
 
 def discard_close_sentences(text: str, common_words_threshold: int) -> str:
     """Enhanced sentence proximity detection."""
@@ -307,8 +302,13 @@ def final_process_text(chunks: List[str], config: Dict, filename: str, stats: Di
     
     # Save preprocessed summary if enabled
     if config.get('save_preprocessed', False):
-        preprocessed_file = os.path.join(input_dir, f"{os.path.splitext(filename)[0]}-summary-preprocessed.txt")
+        preprocessed_file = os.path.join(input_dir, f"{os.path.splitext(filename)[0]}-preprocessed.txt")
         with open(preprocessed_file, 'w', encoding='utf-8') as pf:
+            pf.write(final_text)
+            pf.flush()  # Ensure immediate writing
+    
+    return final_text
+
             pf.write(final_text)
     
     return final_text

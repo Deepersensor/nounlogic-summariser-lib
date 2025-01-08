@@ -53,7 +53,13 @@ def process_file(file_path, config):
         config (dict): Configuration settings.
     """
     _, ext = os.path.splitext(file_path)
-    input_dir = os.path.dirname(file_path)  # Get the directory of the input file
+    input_dir = os.path.dirname(os.path.abspath(file_path))
+    base_name = os.path.splitext(os.path.basename(file_path))[0]
+
+    # Create output paths
+    metadata_path = os.path.join(input_dir, f"{base_name}-metadata.txt")
+    summary_path = os.path.join(input_dir, f"{base_name}-summary.txt")
+    final_summary_path = os.path.join(input_dir, f"{base_name}_summarised.txt")
 
     if ext.lower() == '.pdf' and config['conversion']['pdf_to_md']:
         text = convert_pdf_to_md(file_path)
@@ -63,16 +69,30 @@ def process_file(file_path, config):
 
     sanitized = sanitize_text(text)
     
-    # Preprocess the text
-    selected_text, summary_file = preprocess_text(sanitized, config, os.path.basename(file_path), input_dir)
+    # Preprocess the text and get initial metadata/summaries
+    selected_text, initial_summaries = preprocess_text(sanitized, config, base_name, input_dir)
     
-    summary = summarize_text(selected_text, config)
-    output_path = os.path.join(input_dir, f"{os.path.splitext(os.path.basename(file_path))[0]}{config['output']['suffix']}")
+    # Save metadata separately
+    with open(metadata_path, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(initial_summaries))
     
-    # Open the output file once and write summaries incrementally
-    with open(output_path, 'w', encoding='utf-8') as f:
-        for summary_chunk in summary:
-            f.write(summary_chunk + '\n')
-            _logger.info(f"Written summary chunk to {output_path}")
-    
-    # The final processed text is already saved by preprocess_text if enabled
+    # Process chunks with Ollama
+    with open(summary_path, 'w', encoding='utf-8') as f, \
+         open(final_summary_path, 'w', encoding='utf-8') as final_f:
+        
+        # Write initial summaries first
+        f.write('\n\n=== Initial Metadata and Key Points ===\n\n')
+        f.write('\n'.join(initial_summaries))
+        f.write('\n\n=== Generated Summaries ===\n\n')
+        
+        # Process text chunks with Ollama
+        for chunk_summary in summarize_text(selected_text, config):
+            if chunk_summary and chunk_summary.strip():
+                f.write(f"{chunk_summary}\n\n")
+                final_f.write(f"{chunk_summary}\n\n")
+                _logger.info(f"Wrote summary chunk to {summary_path}")
+                final_f.flush()  # Ensure immediate writing
+                f.flush()
+
+    _logger.info(f"Completed summarization. Files saved in {input_dir}")
+    return final_summary_path
