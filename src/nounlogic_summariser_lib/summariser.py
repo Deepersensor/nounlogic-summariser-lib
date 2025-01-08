@@ -25,15 +25,14 @@ def summarize_text(text, config):
         text (str): Sanitized text.
         config (dict): Configuration settings.
 
-    Returns:
-        str: Summarized text.
+    Yields:
+        str: Summarized text chunks.
     """
     tokens = config['token_limit']
     prompt = config['prompt_template']
     ollama_config = config['ollama']
 
     chunks = chunk_text(text, tokens)
-    summaries = []
 
     for chunk in chunks:
         response = chat(
@@ -41,9 +40,7 @@ def summarize_text(text, config):
             messages=[{"role": "user", "content": f"{prompt}\n\n{chunk}"}]
         )
         # Access the content of the response
-        summaries.append(response.message.content)
-
-    return '\n'.join(summaries)
+        yield response.message.content
 
 def process_file(file_path, config):
     """Process and summarize the given file.
@@ -66,7 +63,11 @@ def process_file(file_path, config):
     
     summary = summarize_text(selected_text, config)
     output_path = f"{os.path.splitext(file_path)[0]}{config['output']['suffix']}"
+    
+    # Open the output file once and write summaries incrementally
     with open(output_path, 'w', encoding='utf-8') as f:
-        f.write(summary)
+        for summary_chunk in summary:
+            f.write(summary_chunk + '\n')
+            _logger.info(f"Written summary chunk to {output_path}")
     
     # The final processed text is already saved by preprocess_text if enabled
