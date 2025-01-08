@@ -94,7 +94,8 @@ def preprocess_text(text: str, config: Dict, filename: str) -> Tuple[str, str]:
     summary_content = []
     questions_content = []
     output_suffix = config['output']['suffix']
-    
+    input_dir = config.get('input_directory', '.')  # Add input_directory to config or pass it as a parameter
+
     # 1. Break text into sections based on common academic headings
     sections = re.split(r'\n\s*\n', text)
     
@@ -199,12 +200,12 @@ def preprocess_text(text: str, config: Dict, filename: str) -> Tuple[str, str]:
         processed_text.append(filtered_section)
     
     # Write questions to {filename}-questions file
-    questions_file = f"{os.path.splitext(filename)[0]}-questions.txt"
+    questions_file = os.path.join(input_dir, f"{os.path.splitext(filename)[0]}-questions.txt")
     with open(questions_file, 'w', encoding='utf-8') as qf:
         qf.write('\n'.join(questions_content))
     
     # Append summary content to {filename}-summary file
-    summary_file = f"{os.path.splitext(filename)[0]}-summary.txt"
+    summary_file = os.path.join(input_dir, f"{os.path.splitext(filename)[0]}-summary.txt")
     with open(summary_file, 'a', encoding='utf-8') as sf:
         sf.write('\n'.join(summary_content) + '\n')
     
@@ -306,7 +307,7 @@ def final_process_text(chunks: List[str], config: Dict, filename: str, stats: Di
     
     # Save preprocessed summary if enabled
     if config.get('save_preprocessed', False):
-        preprocessed_file = f"{os.path.splitext(filename)[0]}-summary-preprocessed.txt"
+        preprocessed_file = os.path.join(input_dir, f"{os.path.splitext(filename)[0]}-summary-preprocessed.txt")
         with open(preprocessed_file, 'w', encoding='utf-8') as pf:
             pf.write(final_text)
     
