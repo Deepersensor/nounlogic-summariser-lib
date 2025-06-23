@@ -137,7 +137,7 @@ All settings are managed via the `config.json` file. Ensure that no settings are
     "token_limit": 1000,
     "prompt_template": "Generate a summary of the following text:",
     "ollama": {
-        "model": "tinyllama",
+        "model": "gemma3:1b",
         "host": "localhost",
         "port": 11434,
         "timeout": 30,
