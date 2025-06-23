@@ -1,6 +1,6 @@
 {
     "token_limit": 1000,
-    "prompt_template": "Generate a summary of the following text:",
+    "prompt_template": "Generate a very concise summary of the following text, and nothing else:",
     "ollama": {
         "model": "gemma3:1b",
         "timeout": 30,
@@ -35,7 +35,7 @@
     },
     "prompt_settings": {
         "enable_custom_prompt": true,
-        "custom_prompt": "Please provide only one sentence concise summary of the text below:"
+        "custom_prompt": "Please provide only one sentence concise summary of the text below, and nothing else:"
     },
     "error_handling": {
         "continue_on_error": true,
