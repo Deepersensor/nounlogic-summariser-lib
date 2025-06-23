@@ -26,6 +26,7 @@ import sys
 
 from nounlogic_summariser_lib import __version__
 from nounlogic_summariser_lib.summariser import process_file, load_config
+from nounlogic_summariser_lib.convert import convert_pdf_to_md, convert_txt_to_pdf, extract_to_markdown
 
 __author__ = "nathfavour"
 __copyright__ = "nathfavour"
@@ -82,6 +83,13 @@ def parse_args(args):
     summarize_parser.add_argument('file', help='Path to the input file')
     summarize_parser.add_argument('--config', help='Path to config file', default='config.json')
 
+    # Convert command
+    convert_parser = subparsers.add_parser('convert', help='Convert files to other formats')
+    convert_parser.add_argument('file', help='Path to the input file')
+    convert_parser.add_argument('--pdf', action='store_true', help='Convert TXT to PDF')
+    convert_parser.add_argument('--markitdown', action='store_true', help='Extract text to Markdown')
+    convert_parser.add_argument('--config', help='Path to config file', default='config.json')
+
     return parser.parse_args(args)
 
 
@@ -110,8 +118,32 @@ def main(args):
     if args.command == 'summarize':
         _logger.info(f"Processing file: {args.file}")
         config = load_config(args.config)
-        process_file(args.file, config)
+        summary_path = process_file(args.file, config)
         _logger.info("Summarization completed.")
+
+        # Optional: auto-convert outputs if enabled in config
+        if config.get("enable_output_conversion", False):
+            outputs = config.get("convert_outputs", [".pdf"])
+            for ext in outputs:
+                if ext == ".pdf":
+                    pdf_path = summary_path.replace(".txt", ".pdf")
+                    convert_txt_to_pdf(summary_path, pdf_path)
+                    _logger.info(f"Converted summary to PDF: {pdf_path}")
+                if ext == ".md":
+                    md_path = summary_path.replace(".txt", ".md")
+                    extract_to_markdown(summary_path, md_path)
+                    _logger.info(f"Converted summary to Markdown: {md_path}")
+
+    elif args.command == 'convert':
+        config = load_config(args.config)
+        if args.pdf:
+            output_pdf = args.file.rsplit('.', 1)[0] + ".pdf"
+            convert_txt_to_pdf(args.file, output_pdf)
+            _logger.info(f"Converted {args.file} to PDF: {output_pdf}")
+        if args.markitdown:
+            output_md = args.file.rsplit('.', 1)[0] + ".md"
+            extract_to_markdown(args.file, output_md)
+            _logger.info(f"Extracted {args.file} to Markdown: {output_md}")
 
 
 def run():
