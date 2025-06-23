@@ -74,13 +74,13 @@ def parse_args(args):
       :obj:`argparse.Namespace`: command line parameters namespace
     """
     parser = argparse.ArgumentParser(description="Text Summarization Tool")
+    parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose output')
     subparsers = parser.add_subparsers(dest='command')
 
     # Summarize command
     summarize_parser = subparsers.add_parser('summarize', help='Summarize a text file')
     summarize_parser.add_argument('file', help='Path to the input file')
     summarize_parser.add_argument('--config', help='Path to config file', default='config.json')
-    summarize_parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose output')
 
     return parser.parse_args(args)
 

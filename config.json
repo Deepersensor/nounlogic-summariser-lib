@@ -2,7 +2,7 @@
     "token_limit": 1000,
     "prompt_template": "Generate a summary of the following text:",
     "ollama": {
-        "model": "tinyllama",
+        "model": "gemma3:1b",
         "timeout": 30,
         "retry_attempts": 3
     },
